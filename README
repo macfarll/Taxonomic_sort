@@ -6,4 +6,4 @@ Planning on internalizing fasta2singleline.pl with bash equivalent, and might do
 Might increase amount of summary statistics available. 
 
 Compare assemblies:
-A quick tool for fasta visualizations using R.
+A quick tool for fasta visualizations using R. Script generates the r_compare script.
