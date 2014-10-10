@@ -1,0 +1,23 @@
+#!/usr/bin/Rscript
+f <- file('stdin')
+open(f)
+while(length(line <- readLines(f,n=5)) > 0) {
+  FASTA1<-print(line[1])
+  FASTA1label<-print(as.character(line[2]))
+  FASTA2<-print(line[3])
+  FASTA2label<-print(line[4])
+  OUTPUT_NAME<-print(line[5])
+}
+library(Biostrings, quietly = TRUE)
+library(ggplot2, quietly = TRUE)
+print(FASTA1label)
+print(FASTA2label)
+fasta1 <- readDNAStringSet({FASTA1})
+fasta2 <- readDNAStringSet({FASTA2})
+fasta1_frame <- data.frame(name="fasta1",length=width(fasta1))
+fasta2_frame <- data.frame(name="fasta2",length=width(fasta2))
+all_frame <- rbind(fasta1_frame, fasta2_frame)
+output_graph <- ggplot(all_frame, aes(x=length, fill=name)) + geom_histogram(data=fasta1_frame, alpha=0.2, binwidth=0.01) + geom_histogram(data=fasta2_frame, alpha=0.2, binwidth=0.01) + scale_x_log10()
+jpeg(filename = {OUTPUT_NAME},width = 1024, height = 768, units = "px")
+output_graph + scale_fill_discrete(name="Assemblies", breaks=c("fasta1", "fasta2"),labels=c("ectools","jelly"))
+dev.off()

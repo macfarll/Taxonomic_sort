@@ -1,0 +1,9 @@
+Taxonomic Sort:
+Program generates the r_mode, r_merger, and r_summary scripts.
+This program currently is dependant on being in the same directory as the script 'etaxa.rb', from Ryan Mueller. It is also requires fasta2singleline.pl, prodigal, and rapsearch be in the path, and the languages python, ruby, and R.
+Currently is case sensitive on tax_name and tax_level arguments, and can only input a fasta file. May modify by adding rapsearch out as input.
+Planning on internalizing fasta2singleline.pl with bash equivalent, and might do the same for the ruby script.
+Might increase amount of summary statistics available. 
+
+Compare assemblies:
+A quick tool for fasta visualizations using R.

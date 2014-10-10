@@ -1,0 +1,11 @@
+#!/usr/bin/Rscript
+
+DIR <- file("stdin")
+
+print("Merging by gi in r")
+lineage <- read.csv2(file = DIR"/gi_taxa.txt", header = F, sep = ";")
+colnames(lineage) <- c("gi", "kingdom", "phylum", "class", "order", "family", "genus")
+mapping <- read.csv2(file = DIR"/3col_gi_mapping", header = F, sep ="\t")
+colnames(mapping) <- c("contig", "gene", "gi")
+merged <- merge(x = lineage, y = mapping, by = "gi", all.y = T)
+write.csv(merged, quote = F,file = DIR"/merged_r_output")

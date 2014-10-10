@@ -1,0 +1,17 @@
+#!/usr/bin/Rscript
+f <- file("stdin")
+open(f)
+while(length(line <- readLines(f,n=1)) > 0) {
+	FASTA<-paste(line[1],"/target_contigs.fa", sep="")
+}
+suppressMessages(library(Biostrings))
+target <- readDNAStringSet({FASTA})
+print("Total length of assembled contigs:")
+paste(" ", sum(width(target)), sep ="")
+print(" ")
+print("Number of target contigs:")
+paste(" ", length(target), sep="")
+print(" ")
+print("Average target contig length:")
+paste(" ", sum(width(target))/length(target), sep="")
+

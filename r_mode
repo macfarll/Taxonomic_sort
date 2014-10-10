@@ -1,0 +1,8 @@
+#!/usr/bin/Rscript
+Mode <- function(x) {
+	ux <- unique(x)
+	ux[which.max(tabulate(match(x, ux)))]
+}
+data <- read.csv2(file = "/media/DATA/Logan/r_studio/ectools_temp/no_duplicate_csv", header = T, sep = ",")
+Table <- sapply(1:max(as.numeric(unique(data$contig))), FUN = function(x) {Mode(data[data$contig == x,"phylum"])})
+write.csv(Table, file = "/media/DATA/Logan/r_studio/ectools_temp/table_of_modes")
