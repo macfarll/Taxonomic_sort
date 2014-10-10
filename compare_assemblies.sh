@@ -103,7 +103,7 @@ fi
 if [ -z $FASTA2 ]; then
   echo using 1 fasta
   echo $FASTA1"\n"$LABEL1"\n"$OUTPUT > input_temp
-  echo "#!/usr/bin/Rscript" >> created_r_script
+  echo "#!/usr/bin/Rscript" > created_r_script
   echo "f <- file('stdin')" >> created_r_script
   echo "open(f)" >> created_r_script
   echo "while(length(line <- readLines(f,n=3)) > 0) {" >> created_r_script
@@ -131,7 +131,7 @@ fi
 if [ -z $FASTA3 ]; then
   echo using 2 fastas
   echo $FASTA1"\n"$LABEL1"\n"$OUTPUT"\n"$FASTA2"\n"$LABEL2 > input_temp
-  echo "#!/usr/bin/Rscript" >> created_r_script
+  echo "#!/usr/bin/Rscript" > created_r_script
   echo "f <- file('stdin')" >> created_r_script
   echo "open(f)" >> created_r_script
   echo "while(length(line <- readLines(f,n=5)) > 0) {" >> created_r_script
@@ -164,7 +164,7 @@ fi
 if [ -z $FASTA4 ]; then
   echo Generating plot with 3 fastas
   echo $FASTA1"\n"$LABEL1"\n"$OUTPUT"\n"$FASTA2"\n"$LABEL2"\n"$FASTA3"\n"$LABEL3 > input_temp
-  echo "#!/usr/bin/Rscript" >> created_r_script
+  echo "#!/usr/bin/Rscript" > created_r_script
   echo "f <- file('stdin')" >> created_r_script
   echo "open(f)" >> created_r_script
   echo "while(length(line <- readLines(f,n=7)) > 0) {" >> created_r_script
