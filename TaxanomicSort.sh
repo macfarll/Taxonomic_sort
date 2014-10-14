@@ -6,10 +6,11 @@ while test 1 -gt 0; do
                         echo "-h,       Show brief help."
                         echo "-f,      Input fasta."
 			echo "-r	Start from rapsearch out, must be followed by <rapsearch_out>.aln file. Reduces runtime if program has been previously run."
+			echo "-q	Quickly re-run the program with new parameters, requires the script have been ran previously in this directory, and the taxa.txt file be in the current directory."
                         echo "-dir,      Working directory, defualts to pwd."
                         echo "-nproc,      Number of processors to be used in rapsearch."
-			echo "-tax_name,	Taxonomic name to be searched for, must be spelled properly with first letter capitalized (ex: Cyanobacteria)."
-			echo "-tax_level,	Taxonomic level to be searched at, must be spelled properly, all lower case (ex: phylum)."
+			echo "-tax_name,	Taxonomic name to be searched for, make sure argument is spelled correctly."
+			echo "-tax_level,	Taxonomic level to be searched at, make sure argument is spelled correctly."
 			echo "-s,	Turns off summary statistics."
                         exit 0
                         ;;
@@ -18,10 +19,17 @@ while test 1 -gt 0; do
 			if test $# -gt 0; then
 				export RAPSEARCHOUT=$1
 				echo "Using rapsearch output:"
-				echo $RAPSEARCHOUT".aln"
+				echo $RAPSEARCHOUT
 			fi
 			shift
 			;;
+                -q)
+                        shift
+                        if test 1 -gt 0; then
+                                export QUICKPARAM="1"
+                                echo "Using quick option."
+                        fi
+                        ;;
                 -f)
                         shift
                         if test $# -gt 0; then
@@ -37,7 +45,7 @@ while test 1 -gt 0; do
                 -tax_name)
                         shift
                         if test $# -gt 0; then
-                                export LABEL=$1
+                                export LABEL=`echo $1 | tr [A-Z] [a-z] | sed -e 's/^./\U&/g; s/ ./\U&/g'`
 				echo "\nTaxonomic label to be used:"
 				echo " "$LABEL
                         else
@@ -49,7 +57,7 @@ while test 1 -gt 0; do
                 -tax_level)
                         shift
                         if test $# -gt 0; then
-                                export LEVEL=$1
+                                export LEVEL=`echo $1 | tr [A-Z] [a-z] | sed -e 's/^./\U&/g; s/ ./\U&/g'`
 				echo "\nTaxonomic level to search at:"
 				echo " "$LEVEL
                         else
@@ -93,6 +101,7 @@ while test 1 -gt 0; do
                         ;;
         esac
 done
+rm 1l_fasta_temp.fa 3col_gi_mapping formatted_prodigal.faa gi_mapping gi_taxa.txt gi.txt table_of_modes no_duplicate_csv merged_r_output line_sep_grep_commands target_contigs.fa Esearcher_subscript.sh 2>/dev/null
 if [ -z $NPROC ]; then
         echo "\nNumber of processors not specified, using 1."
 	NPROC="1"
@@ -120,7 +129,7 @@ if [ -z $LABEL ]; then
         exit
 fi
 if [ -z $RAPSEARCHOUT ]; then
-	cat ${FASTA} | awk '{if (substr($0,1,1)==">"){if (p) {print "\n";} print $0} else printf("%s",$0);P++;}END{print"\n"}' > ${DIR}/1l_fasta_temp.fa
+	cat ${FASTA} | awk '{if (substr($0,1,1)==">"){if (p) {print "\n";} print $0} else printf("%s",$0);p++;}END{print"\n"}' | sed '/^\s*$/d' > ${DIR}/1l_fasta_temp.fa
 	FASTA=${DIR}/1l_fasta_temp.fa
 	grep ">" ${FASTA} | awk '{printf ">%d\n", NR}' > ${DIR}/headers
 	grep -v ">" ${FASTA} > ${DIR}/seqs
@@ -136,8 +145,27 @@ fi
 grep "^[0-9]" ${RAPSEARCHOUT} | sed 's/\t/|/g' | sed 's/ vs gi//g' | awk -F"|" '{print $1"\t"$2}' > ${DIR}/gi_mapping
 sed 's/_/\t/g' ${DIR}/gi_mapping > ${DIR}/3col_gi_mapping
 grep -v ">" ${DIR}/rapsearch_out.m8 | awk -F"|" '{print $2}' | sed -e '1,5d' > ${DIR}/gi.txt
-ruby etaxa.rb ${DIR}/gi.txt >/dev/null 2>/dev/null
-sh etaxa.sh >/dev/null 2>/dev/null
+GI=`cat ${DIR}/gi.txt`
+COUNTER=0
+for i in $GI; do
+        COUNTER=$((COUNTER+1))
+        if [ $COUNTER -lt 250 ]; then
+                TEMP=$TEMP$i","
+        else
+                COUNTER=0
+                LIST=`echo ${TEMP} | sed 's/,$//g'`
+                echo "esearch -db protein -query \""${LIST}"\" | efetch -format gpc | grep --color -E \"INSDSeq_taxonomy|<INSDSeqid>gi\" | sed -e 's/^[ \\\t]*//' -e 's/<INSDSeq_taxonomy>//g' -e 's/<\\/INSDSeq_taxonomy>//g' -e 's/<INSDSeqid>gi|//g' -e 's/<\/INSDSeqid>//g' >> taxa.txt" >> Esearcher_subscript.sh
+                TEMP=`echo " "`
+        fi
+done
+LIST=`echo ${TEMP} | sed 's/,$/ [gi]/g'`
+echo "esearch -db protein -query \""${LIST}"\" | efetch -format gpc | grep --color -E \"INSDSeq_taxonomy|<INSDSeqid>gi\" | sed -e 's/^[ \\\t]*//' -e 's/<INSDSeq_taxonomy>//g' -e 's/<\\/INSDSeq_taxonomy>//g' -e 's/<INSDSeqid>gi|//g' -e 's/<\/INSDSeqid>//g' >> taxa.txt" >> Esearcher_subscript.sh
+if [ -z ${QUICKPARAM} ]; then
+	echo "Finding taxanomy for gene ids."
+	rm taxa.txt 2>/dev/null
+	sh Esearcher_subscript.sh >/dev/null 2>/dev/null
+fi
+rm Esearcher_subscript.sh
 grep -A1 "^[0-9]" ${DIR}/taxa.txt | sed '/[0-9]/ a\HOLDER' | sed ':a;N;$!ba;s/\nHOLDER\n/;/g' | sed 's/ //g' | sed -e 's/;/-/7' > ${DIR}/gi_taxa.txt
 echo "#!/usr/bin/Rscript" > created_r_merger
 echo "f <- file(\"stdin\")" >> created_r_merger
@@ -151,16 +179,15 @@ echo "}" >> created_r_merger
 echo "print(\"Merging by gi in r\")" >> created_r_merger
 echo "print(GI)" >> created_r_merger
 echo "lineage <- read.csv2(file = {GI}, header = F, sep = \";\")" >> created_r_merger
-echo "lineage <- lineage[-6]" >> created_r_merger
 echo "lineage <- lineage[-7]" >> created_r_merger
 echo "lineage <- lineage[-8]" >> created_r_merger
 echo "lineage <- lineage[-9] " >> created_r_merger
-echo "colnames(lineage) <- c(\"gi\", \"kingdom\", \"phylum\", \"class\", \"order\", \"family\")" >> created_r_merger
+echo "colnames(lineage) <- c(\"gi\", \"Kingdom\", \"Phylum\", \"Class\", \"Order\", \"Family\")" >> created_r_merger
 echo "mapping <- read.csv2(file = {MAPPING}, header = F, sep =\"\\\t\")" >> created_r_merger
 echo "colnames(mapping) <- c(\"contig\", \"gene\", \"gi\")" >> created_r_merger
 echo "merged <- merge(x = lineage, y = mapping, by = \"gi\", all.y = T)" >> created_r_merger
 echo "write.csv(merged, quote = F,file = {OUT})" >> created_r_merger
-echo ${DIR} | Rscript ${DIR}/created_r_merger >/dev/null 2>/dev/null
+echo ${DIR} | Rscript ${DIR}/created_r_merger
 rm created_r_merger
 sed 's/^[0-9]*[0-9],//g' ${DIR}/merged_r_output | sed -e '1s/^.//' | awk '!a[$0]++' | sed 's/ /_/g' > ${DIR}/no_duplicate_csv
 echo ${DIR}"\n"${LEVEL} > tax_search_param
@@ -186,7 +213,7 @@ grep "${LABEL}" ${DIR}/table_of_modes | sed -e "s/$LABEL//" | sed 's/"//g'| sed 
 while read p; do
   grep -A1 "$p" ${DIR}/renumbered.fa >> ${DIR}/target_contigs.fa
 done <${DIR}/line_sep_grep_commands
-rm line_sep_grep_commands
+#rm line_sep_grep_commands
 echo "\nThe output file, 'target_contigs.fa' has been generated.\n"
 if [ -z $SUMMARY ]; then
 	echo "#!/usr/bin/Rscript" > created_r_summary
