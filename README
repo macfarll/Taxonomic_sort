@@ -1,8 +1,8 @@
 Taxonomic Sort:
 Program generates the r_mode, r_merger, and r_summary scripts.
 This program currently requires prodigal and rapsearch be in the path, and the language R.
-Might increase amount of summary statistics available in future version (such as N50). 
-Might make the directory create a directory for clean runs.
 Will add user-friendly error messages.
+Will offer more flexibility to be run other machines (path to rapsearch/prodigal, db file)
+Will add ability to filter contigs by pct identity/size.
 Compare assemblies:
 A quick tool for fasta visualizations using R. Script generates the r_compare script.
